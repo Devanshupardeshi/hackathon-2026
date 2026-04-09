@@ -1,30 +1,49 @@
 import Post from "../models/Post.js";
 
-export const getPosts = async (_req, res) => {
-  const posts = await Post.find()
+const populatePost = (query) =>
+  query
     .populate("author", "name role")
-    .populate("comments.user", "name")
-    .sort({ createdAt: -1 });
+    .populate("likes", "name")
+    .populate("comments.user", "name");
+
+export const getPosts = async (_req, res) => {
+  const posts = await populatePost(Post.find().sort({ createdAt: -1 }));
   res.json(posts);
 };
 
 export const createPost = async (req, res) => {
-  const { content, category } = req.body;
-  const post = await Post.create({ author: req.user._id, content, category });
-  res.status(201).json(post);
+  try {
+    const { content, category } = req.body;
+    if (!category) return res.status(400).json({ message: "Category required" });
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : "";
+    const text = String(content || "").trim();
+    if (!text && !imageUrl) {
+      return res.status(400).json({ message: "Add text or an image" });
+    }
+    const post = await Post.create({
+      author: req.user._id,
+      content: text,
+      category,
+      imageUrl: imageUrl || undefined
+    });
+    const full = await populatePost(Post.findById(post._id));
+    res.status(201).json(full);
+  } catch (err) {
+    res.status(400).json({ message: err.message || "Could not create post" });
+  }
 };
 
 export const likePost = async (req, res) => {
   const post = await Post.findById(req.params.id);
   if (!post) return res.status(404).json({ message: "Post not found" });
-  const alreadyLiked = post.likes.some((id) => id.toString() === req.user._id.toString());
-  if (alreadyLiked) {
-    post.likes = post.likes.filter((id) => id.toString() !== req.user._id.toString());
-  } else {
-    post.likes.push(req.user._id);
-  }
-  await post.save();
-  res.json(post);
+
+  const uid = req.user._id;
+  const liked = post.likes.some((id) => id.equals(uid));
+  const op = liked ? { $pull: { likes: uid } } : { $addToSet: { likes: uid } };
+  await Post.updateOne({ _id: post._id }, op);
+
+  const updated = await populatePost(Post.findById(post._id));
+  res.json(updated);
 };
 
 export const addComment = async (req, res) => {
@@ -32,8 +51,8 @@ export const addComment = async (req, res) => {
   if (!post) return res.status(404).json({ message: "Post not found" });
   post.comments.push({ user: req.user._id, text: req.body.text });
   await post.save();
-  await post.populate("comments.user", "name");
-  res.json(post);
+  const updated = await populatePost(Post.findById(post._id));
+  res.json(updated);
 };
 
 export const deletePost = async (req, res) => {

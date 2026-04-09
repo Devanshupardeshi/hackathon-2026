@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute";
 import AIPanel from "./components/AIPanel";
+import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./layouts/AppLayout";
 import DashboardPage from "./pages/DashboardPage";
 import EventsPage from "./pages/EventsPage";
@@ -11,26 +11,69 @@ import ProfilePage from "./pages/ProfilePage";
 import RegisterPage from "./pages/RegisterPage";
 import TasksPage from "./pages/TasksPage";
 
-const PrivatePage = ({ children }) => (
+const PrivateLayout = ({ children }) => (
   <ProtectedRoute>
     <AppLayout>{children}</AppLayout>
   </ProtectedRoute>
 );
 
-const App = () => {
-  return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/dashboard" element={<PrivatePage><DashboardPage /></PrivatePage>} />
-      <Route path="/feed" element={<PrivatePage><FeedPage /></PrivatePage>} />
-      <Route path="/tasks" element={<PrivatePage><TasksPage /></PrivatePage>} />
-      <Route path="/placements" element={<PrivatePage><PlacementsPage /></PrivatePage>} />
-      <Route path="/events" element={<PrivatePage><EventsPage /></PrivatePage>} />
-      <Route path="/profile" element={<PrivatePage><div className="space-y-4"><ProfilePage /><AIPanel /></div></PrivatePage>} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  );
-};
+const App = () => (
+  <Routes>
+    <Route path="/login" element={<LoginPage />} />
+    <Route path="/register" element={<RegisterPage />} />
+    <Route
+      path="/dashboard"
+      element={
+        <PrivateLayout>
+          <DashboardPage />
+        </PrivateLayout>
+      }
+    />
+    <Route
+      path="/feed"
+      element={
+        <PrivateLayout>
+          <FeedPage />
+        </PrivateLayout>
+      }
+    />
+    <Route
+      path="/tasks"
+      element={
+        <PrivateLayout>
+          <TasksPage />
+        </PrivateLayout>
+      }
+    />
+    <Route
+      path="/placements"
+      element={
+        <PrivateLayout>
+          <PlacementsPage />
+        </PrivateLayout>
+      }
+    />
+    <Route
+      path="/events"
+      element={
+        <PrivateLayout>
+          <EventsPage />
+        </PrivateLayout>
+      }
+    />
+    <Route
+      path="/profile"
+      element={
+        <PrivateLayout>
+          <div className="space-y-6">
+            <ProfilePage />
+            <AIPanel />
+          </div>
+        </PrivateLayout>
+      }
+    />
+    <Route path="*" element={<Navigate to="/dashboard" replace />} />
+  </Routes>
+);
 
 export default App;

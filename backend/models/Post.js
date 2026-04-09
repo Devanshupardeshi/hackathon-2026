@@ -11,7 +11,8 @@ const commentSchema = new mongoose.Schema(
 const postSchema = new mongoose.Schema(
   {
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    content: { type: String, required: true },
+    content: { type: String, default: "" },
+    imageUrl: { type: String, default: "" },
     category: {
       type: String,
       enum: ["Placement", "Projects", "Learning", "Clubs"],
