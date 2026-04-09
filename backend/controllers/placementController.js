@@ -1,7 +1,9 @@
 import Placement from "../models/Placement.js";
 
+const populatePostedBy = (query) => query.populate("postedBy", "name role email");
+
 export const getPlacements = async (_req, res) => {
-  const placements = await Placement.find().sort({ createdAt: -1 });
+  const placements = await populatePostedBy(Placement.find().sort({ createdAt: -1 }));
   res.json(placements);
 };
 
@@ -12,7 +14,8 @@ export const createPlacement = async (req, res) => {
     description: req.body.description,
     postedBy: req.user._id
   });
-  res.status(201).json(placement);
+  const full = await populatePostedBy(Placement.findById(placement._id));
+  res.status(201).json(full);
 };
 
 export const applyPlacement = async (req, res) => {
@@ -24,5 +27,6 @@ export const applyPlacement = async (req, res) => {
   if (alreadyApplied) return res.status(400).json({ message: "Already applied" });
   placement.applications.push({ applicant: req.user._id, resumeUrl: req.body.resumeUrl });
   await placement.save();
-  res.json(placement);
+  const updated = await populatePostedBy(Placement.findById(placement._id));
+  res.json(updated);
 };

@@ -4,9 +4,18 @@ import User from "../models/User.js";
 import RegisterOtp from "../models/RegisterOtp.js";
 import generateToken from "../utils/generateToken.js";
 import { sendRegisterOtpEmail } from "../utils/mailer.js";
-import { logError } from "../utils/logger.js";
+import { logError, logInfo } from "../utils/logger.js";
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();
+
+const publicUser = (userDoc) => ({
+  id: userDoc._id,
+  name: userDoc.name,
+  email: userDoc.email,
+  role: userDoc.role,
+  bio: userDoc.bio ?? "",
+  skills: userDoc.skills ?? []
+});
 
 export const sendRegisterOtp = async (req, res) => {
   const email = normalizeEmail(req.body.email);
@@ -14,7 +23,14 @@ export const sendRegisterOtp = async (req, res) => {
 
   try {
     const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: "Email already in use" });
+    if (existing) {
+      logInfo("sendRegisterOtp: skipped (email already registered)", { code: "EMAIL_IN_USE" });
+      return res.status(400).json({
+        message: "This email is already registered",
+        hint: "Use Sign in on the login page, or register with a different email.",
+        code: "EMAIL_IN_USE"
+      });
+    }
 
     await RegisterOtp.deleteMany({ email });
     const code = String(crypto.randomInt(100000, 1000000));
@@ -57,7 +73,13 @@ export const register = async (req, res) => {
     }
 
     const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: "Email already in use" });
+    if (existing) {
+      return res.status(400).json({
+        message: "This email is already registered",
+        hint: "Use Sign in instead of completing registration.",
+        code: "EMAIL_IN_USE"
+      });
+    }
 
     const record = await RegisterOtp.findOne({ email }).sort({ createdAt: -1 });
     if (!record || record.expiresAt < new Date()) {
@@ -69,12 +91,15 @@ export const register = async (req, res) => {
 
     await RegisterOtp.deleteMany({ email });
 
+    const allowedRoles = ["student", "admin", "recruiter"];
+    const r = allowedRoles.includes(role) ? role : "student";
+
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ name, email, password: hashed, role });
+    const user = await User.create({ name, email, password: hashed, role: r });
 
     return res.status(201).json({
       token: generateToken(user._id),
-      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+      user: publicUser(user)
     });
   } catch (error) {
     return res.status(500).json({ message: "Registration failed", error: error.message });
@@ -93,7 +118,7 @@ export const login = async (req, res) => {
 
     return res.json({
       token: generateToken(user._id),
-      user: { id: user._id, name: user.name, email: user.email, role: user.role }
+      user: publicUser(user)
     });
   } catch (error) {
     return res.status(500).json({ message: "Login failed", error: error.message });
@@ -101,13 +126,33 @@ export const login = async (req, res) => {
 };
 
 export const me = async (req, res) => {
-  const u = req.user;
-  return res.json({
-    user: {
-      id: u._id,
-      name: u.name,
-      email: u.email,
-      role: u.role
+  const u = await User.findById(req.user._id).select("-password");
+  if (!u) return res.status(404).json({ message: "User not found" });
+  return res.json({ user: publicUser(u) });
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, bio, skills } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (name != null) {
+      const n = String(name).trim();
+      if (n.length < 2) return res.status(400).json({ message: "Name too short" });
+      user.name = n;
     }
-  });
+    if (bio != null) user.bio = String(bio);
+    if (skills != null) {
+      if (!Array.isArray(skills)) {
+        return res.status(400).json({ message: "Skills must be an array" });
+      }
+      user.skills = skills.map((s) => String(s).trim()).filter(Boolean);
+    }
+
+    await user.save();
+    return res.json({ user: publicUser(user) });
+  } catch (error) {
+    return res.status(500).json({ message: "Could not update profile", error: error.message });
+  }
 };

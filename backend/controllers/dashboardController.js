@@ -6,7 +6,7 @@ export const getDashboard = async (req, res) => {
   const [upcomingEvents, tasks, placements] = await Promise.all([
     Event.find({ date: { $gte: new Date() } }).sort({ date: 1 }).limit(5),
     Task.find({ owner: req.user._id }).sort({ createdAt: -1 }).limit(5),
-    Placement.find().sort({ createdAt: -1 }).limit(5)
+    Placement.find().populate("postedBy", "name role email").sort({ createdAt: -1 }).limit(5)
   ]);
 
   res.json({

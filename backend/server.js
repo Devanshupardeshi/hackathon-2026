@@ -24,6 +24,8 @@ const uploadsDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 const app = express();
+// Avoid 304 Not Modified on JSON APIs (empty body can break axios clients that expect fresh JSON).
+app.set("etag", false);
 app.use(cors());
 app.use(express.json());
 app.use(requestLogger);
