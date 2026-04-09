@@ -1,0 +1,47 @@
+---
+description: Build CampusFlow AI as a production-ready MERN MVP
+alwaysApply: true
+---
+
+# CampusFlow AI MVP Rule
+
+## Product Definition
+- Build `CampusFlow AI`: a startup-grade campus collaboration platform with AI productivity + placement workflows.
+- Prioritize a production-ready feel (clean UX, consistent patterns, scalable code organization) over hackathon-only shortcuts.
+
+## Required Repository Structure
+- Keep two top-level app folders: `frontend/` and `backend/`.
+- Backend must include: `controllers/`, `routes/`, `models/`, `middleware/`, `config/`, `utils/`, `server.js`, `package.json`, `.env.example`.
+- Frontend must include: `src/pages/`, `src/components/`, `src/layouts/`, `src/services/`, `src/hooks/`, `src/context/`, `src/App.jsx`, `src/main.jsx`, `package.json`, `vite.config.js`.
+
+## Mandatory Stack and Runtime
+- Frontend: React (Vite), Tailwind CSS, React Router, Axios.
+- Backend: Node.js, Express.js, MongoDB (Mongoose).
+- AI integration: Google Gemini API via backend endpoint `POST /api/ai/generate`.
+- Run frontend and backend on separate ports during development.
+- Keep deployment-ready conventions for Vercel (frontend) and Railway/Render (backend).
+
+## Roles and Access
+- Implement role-based access with at least `student` and `admin`; include `recruiter` when feasible.
+- Use JWT authentication (register, login, role selection, protected routes, server-side role checks).
+
+## Phase 1 Features That Must Work
+- Auth: register/login with JWT and protected routes.
+- Dashboard: welcome, upcoming events, tasks, placements, AI suggestions.
+- Collaboration feed: create/like/comment/delete post, categories (`Placement`, `Projects`, `Learning`, `Clubs`).
+- Task management: create/update/delete/complete task.
+- Placement section: list placements, apply action, resume upload support.
+- Events/clubs: create event, join event, list events.
+- AI assistant panel: learning roadmap, project ideas, task generation, resume feedback.
+
+## Required Pages
+- `Login`, `Register`, `Dashboard`, `Feed`, `Tasks`, `Placements`, `Events`, `Profile`.
+
+## UI/UX Constraints
+- Use a modern SaaS visual language: sidebar layout, rounded cards, soft shadows, gradient CTAs, vibrant but readable theme.
+- Keep interactions simple and human-friendly; optimize clarity for student users.
+
+## Delivery and Quality
+- Favor clean architecture (separation by responsibility, reusable services/hooks/components).
+- Ensure API contracts are explicit and consistent between frontend services and backend routes.
+- Track implementation progress with a persistent feature task list and update it as work is completed.
